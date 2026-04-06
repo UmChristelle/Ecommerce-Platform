@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProducts, deleteProduct } from "../../api/products";
-import { getCategories, deleteCategory, createCategory } from "../../api/categories";
+import { getCategories, deleteCategory, createCategory, updateCategory } from "../../api/categories";
 import { getAllOrders, updateOrderStatus } from "../../api/orders";
 import { Link } from "react-router-dom";
 import Button from "../../components/ui/Button";
@@ -17,9 +17,14 @@ import { categorySchema, type CategoryFormData } from "../../utils/validators";
 import Input from "../../components/ui/Input";
 
 const statusColors: Record<OrderStatus, "yellow" | "blue" | "purple" | "green" | "red"> = {
-  PENDING: "yellow", PROCESSING: "blue", SHIPPED: "purple", DELIVERED: "green", CANCELLED: "red",
+  PENDING: "yellow",
+  PAID: "blue",
+  PROCESSING: "blue",
+  SHIPPED: "purple",
+  DELIVERED: "green",
+  CANCELLED: "red",
 };
-const ORDER_STATUSES: OrderStatus[] = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+const ORDER_STATUSES: OrderStatus[] = ["PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 const Dashboard = () => {
   const qc = useQueryClient();
@@ -53,12 +58,13 @@ const Dashboard = () => {
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
+    mode: "onChange",
+    reValidateMode: "onBlur",
   });
 
   const { mutate: saveCat, isPending: savingCat } = useMutation({
     mutationFn: async (data: CategoryFormData) => {
       if (editingCat) {
-        const { updateCategory } = await import("../../api/categories");
         return updateCategory(editingCat.id, data);
       }
       return createCategory(data);
