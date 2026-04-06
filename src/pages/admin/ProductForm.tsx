@@ -195,9 +195,9 @@ const ProductForm = () => {
                   <Trash2 size={16} />
                 </button>
               )}
-              {previewIndex === index && (
+              {previewIndex === index && watchedImages?.[index]?.trim() && (
                 <img
-                  src={watchedImages?.[index] ?? ""}
+                  src={watchedImages[index]}
                   alt="preview"
                   className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
