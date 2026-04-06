@@ -40,7 +40,7 @@ const ProductDetail = () => {
         <ArrowLeft size={16} /> Back
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
         {/* Images */}
         <div>
           <img
@@ -50,7 +50,7 @@ const ProductDetail = () => {
             onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=No+Image"; }}
           />
           {product.images.length > 1 && (
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
               {product.images.map((img, i) => (
                 <img
                   key={i}
@@ -70,7 +70,7 @@ const ProductDetail = () => {
           <h1 className="text-3xl font-extrabold text-gray-900">{product.title}</h1>
           <p className="text-gray-600 leading-relaxed">{product.description}</p>
 
-          <div className="flex items-center gap-4 py-4 border-y border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-4 border-y border-gray-100">
             <span className="text-3xl font-bold text-primary-600">${product.price.toFixed(2)}</span>
             <span className={`text-sm font-medium px-3 py-1 rounded-full ${product.stock > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
               {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}

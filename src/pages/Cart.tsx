@@ -51,7 +51,7 @@ const Cart = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex gap-4">
+            <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col sm:flex-row gap-4">
               <img
                 src={item.product.images[0] ?? "https://placehold.co/96x96?text=Img"}
                 alt={item.product.title}
@@ -84,7 +84,7 @@ const Cart = () => {
                   </button>
                 </div>
               </div>
-              <div className="text-right shrink-0">
+              <div className="text-left sm:text-right shrink-0 flex sm:block items-center justify-between gap-3">
                 <p className="font-bold text-gray-900">${item.subtotal.toFixed(2)}</p>
                 <button
                   onClick={() => removeItem(item.id)}
@@ -98,7 +98,7 @@ const Cart = () => {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-24">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:sticky lg:top-24">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
             <div className="space-y-2 text-sm">
               {items.map((item) => (

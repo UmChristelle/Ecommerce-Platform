@@ -66,9 +66,9 @@ const Checkout = () => {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Checkout</h1>
 
-      <div className="flex items-center mb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 mb-10">
         {STEPS.map((label, index) => (
-          <div key={label} className="flex items-center flex-1">
+          <div key={label} className="flex items-center flex-1 w-full">
             <div
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                 index === step
@@ -82,7 +82,7 @@ const Checkout = () => {
               <span className="hidden sm:inline">{label}</span>
             </div>
             {index < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-2 ${index < step ? "bg-green-400" : "bg-gray-200"}`} />
+              <div className={`hidden sm:block flex-1 h-0.5 mx-2 ${index < step ? "bg-green-400" : "bg-gray-200"}`} />
             )}
           </div>
         ))}
@@ -155,17 +155,17 @@ const Checkout = () => {
           </div>
         )}
 
-        <div className="flex justify-between mt-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 mt-6">
           {step > 0 ? (
-            <Button type="button" variant="secondary" onClick={() => setStep((current) => current - 1)}>
+            <Button type="button" variant="secondary" onClick={() => setStep((current) => current - 1)} className="w-full sm:w-auto">
               Back
             </Button>
           ) : <div />}
 
           {step < 2 ? (
-            <Button type="button" onClick={nextStep}>Continue</Button>
+            <Button type="button" onClick={nextStep} className="w-full sm:w-auto">Continue</Button>
           ) : (
-            <Button type="submit" isLoading={isPending} size="lg">Place Order</Button>
+            <Button type="submit" isLoading={isPending} size="lg" className="w-full sm:w-auto">Place Order</Button>
           )}
         </div>
       </form>

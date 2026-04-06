@@ -35,7 +35,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-4 xl:gap-6">
             <Link to="/" className="text-gray-600 hover:text-primary-600 font-medium transition-colors">
               Store
             </Link>
@@ -73,7 +73,7 @@ const Navbar = () => {
 
             {isAuthenticated && (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500 hidden lg:block">Hi, {user?.name}</span>
+                <span className="text-sm text-gray-500 hidden xl:block max-w-32 truncate">Hi, {user?.name}</span>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 font-medium transition-colors"
@@ -87,7 +87,7 @@ const Navbar = () => {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -97,7 +97,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3 shadow-lg">
+        <div className="lg:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3 shadow-lg">
           <Link to="/" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium hover:text-primary-600">Store</Link>
 
           {isAuthenticated && userRole === "ADMIN" && (

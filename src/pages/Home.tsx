@@ -32,9 +32,9 @@ const Home = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-8 md:p-12 mb-10 text-white text-center">
+      <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-6 sm:p-8 lg:p-12 mb-10 text-white text-center">
         <h1 className="text-3xl md:text-5xl font-extrabold mb-3">Welcome to E-Comus</h1>
-        <p className="text-primary-100 text-lg mb-6">Discover amazing products at unbeatable prices</p>
+        <p className="text-primary-100 text-base sm:text-lg mb-6">Discover amazing products at unbeatable prices</p>
         <div className="max-w-xl mx-auto relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
@@ -76,7 +76,7 @@ const Home = () => {
       ) : (
         <>
           <p className="text-sm text-gray-500 mb-4">{filtered.length} product{filtered.length !== 1 ? "s" : ""} found</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
             {filtered.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
