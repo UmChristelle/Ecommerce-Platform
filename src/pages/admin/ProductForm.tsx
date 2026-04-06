@@ -83,7 +83,7 @@ const ProductForm = () => {
         <ArrowLeft size={16} /> Back to Dashboard
       </button>
 
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-start sm:items-center gap-3 mb-8">
         <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
           <Package size={24} className="text-primary-600" />
         </div>
@@ -136,7 +136,7 @@ const ProductForm = () => {
         {/* Pricing & Stock */}
         <div className="card space-y-5">
           <h2 className="font-semibold text-gray-800 border-b pb-3">Pricing & Inventory</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Price ($)"
               type="number"
@@ -167,7 +167,7 @@ const ProductForm = () => {
               size="sm"
               variant="secondary"
               onClick={() => append("" as never)}
-              className="gap-1.5"
+              className="gap-1.5 w-full sm:w-auto"
             >
               <Plus size={14} /> Add Image URL
             </Button>
@@ -176,8 +176,8 @@ const ProductForm = () => {
           {errors.images?.message && <p className="text-xs text-red-500">{errors.images.message}</p>}
 
           {fields.map((field, index) => (
-            <div key={field.id} className="flex gap-2 items-start">
-              <div className="flex-1">
+            <div key={field.id} className="flex flex-col sm:flex-row gap-2 items-start">
+              <div className="flex-1 w-full">
                 <Input
                   placeholder="https://example.com/image.jpg"
                   error={errors.images?.[index]?.message}
@@ -190,7 +190,7 @@ const ProductForm = () => {
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="mt-0.5 p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="mt-0.5 p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors self-end sm:self-auto"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -208,9 +208,9 @@ const ProductForm = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={() => navigate("/admin")}>Cancel</Button>
-          <Button type="submit" isLoading={isPending} size="lg">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <Button type="button" variant="secondary" onClick={() => navigate("/admin")} className="w-full sm:w-auto">Cancel</Button>
+          <Button type="submit" isLoading={isPending} size="lg" className="w-full sm:w-auto">
             {isEditing ? "Update Product" : "Create Product"}
           </Button>
         </div>
