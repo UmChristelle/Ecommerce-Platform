@@ -8,6 +8,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { Package } from "lucide-react";
 import toast from "react-hot-toast";
+import { getErrorMessage } from "../utils/errors";
 
 const Login = () => {
   const { login } = useAuth();
@@ -20,6 +21,8 @@ const Login = () => {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: "onChange",
+    reValidateMode: "onBlur",
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -32,10 +35,8 @@ const Login = () => {
       } else {
         navigate("/", { replace: true });
       }
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ?? err?.message ?? "Invalid credentials"
-      );
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Invalid credentials"));
     } finally {
       setIsLoading(false);
     }

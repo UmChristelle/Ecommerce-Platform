@@ -8,6 +8,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { Package } from "lucide-react";
 import toast from "react-hot-toast";
+import { getErrorMessage } from "../utils/errors";
 
 const Register = () => {
   const { register: registerUser } = useAuth();
@@ -20,6 +21,8 @@ const Register = () => {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    mode: "onChange",
+    reValidateMode: "onBlur",
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -27,10 +30,8 @@ const Register = () => {
       setIsLoading(true);
       await registerUser(data.name, data.email, data.password);
       navigate("/", { replace: true });
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ?? err?.message ?? "Registration failed"
-      );
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Registration failed"));
     } finally {
       setIsLoading(false);
     }
