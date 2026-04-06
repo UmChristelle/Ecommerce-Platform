@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema, type ProductFormData } from "../../utils/validators";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import Button from "../../components/ui/Button";
 import Spinner from "../../components/ui/Spinner";
 import { Plus, Trash2, ArrowLeft, Package } from "lucide-react";
 import toast from "react-hot-toast";
+import { getErrorMessage } from "../../utils/errors";
 
 const ProductForm = () => {
   const { id } = useParams<{ id?: string }>();
@@ -37,11 +39,14 @@ const ProductForm = () => {
     reset,
     formState: { errors },
   } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema) as any,
+    resolver: zodResolver(productSchema) as Resolver<ProductFormData>,
+    mode: "onChange",
+    reValidateMode: "onBlur",
     defaultValues: { images: [""] },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "images" as never });
+  const watchedImages = useWatch({ control, name: "images" });
 
   useEffect(() => {
     if (existingProduct) {
@@ -65,7 +70,7 @@ const ProductForm = () => {
       toast.success(isEditing ? "Product updated!" : "Product created!");
       navigate("/admin");
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Failed to save product"),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to save product")),
   });
 
   if ((isEditing && loadingProduct) || loadingCats) {
@@ -92,7 +97,7 @@ const ProductForm = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-6">
+      <form onSubmit={handleSubmit((data: ProductFormData) => mutate(data))} className="space-y-6">
         {/* Basic Info */}
         <div className="card space-y-5">
           <h2 className="font-semibold text-gray-800 border-b pb-3">Basic Information</h2>
@@ -175,8 +180,8 @@ const ProductForm = () => {
               <div className="flex-1">
                 <Input
                   placeholder="https://example.com/image.jpg"
-                  error={(errors.images as any)?.[index]?.message}
-                  {...register(`images.${index}` as any, {
+                  error={errors.images?.[index]?.message}
+                  {...register(`images.${index}` as const, {
                     onChange: () => setPreviewIndex(index),
                   })}
                 />
@@ -191,7 +196,12 @@ const ProductForm = () => {
                 </button>
               )}
               {previewIndex === index && (
-                <img src={(field as any).value ?? ""} alt="preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <img
+                  src={watchedImages?.[index] ?? ""}
+                  alt="preview"
+                  className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
               )}
             </div>
           ))}
