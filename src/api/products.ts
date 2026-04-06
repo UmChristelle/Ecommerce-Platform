@@ -2,6 +2,28 @@ import api from "./axios";
 import type { Product } from "../types";
 import { normalizeProductResponse, normalizeProductsResponse } from "./normalizers";
 
+const getImageFormat = (imageUrl: string): "JPG" | "JPEG" | "PNG" | "WEBP" => {
+  try {
+    const pathname = new URL(imageUrl).pathname;
+    const extension = pathname.split(".").pop()?.toUpperCase();
+
+    if (extension === "PNG") return "PNG";
+    if (extension === "WEBP") return "WEBP";
+    if (extension === "JPEG") return "JPEG";
+    if (extension === "JPG") return "JPG";
+  } catch {
+    const sanitized = imageUrl.split("?")[0].split("#")[0];
+    const extension = sanitized.split(".").pop()?.toUpperCase();
+
+    if (extension === "PNG") return "PNG";
+    if (extension === "WEBP") return "WEBP";
+    if (extension === "JPEG") return "JPEG";
+    if (extension === "JPG") return "JPG";
+  }
+
+  return "JPG";
+};
+
 const toProductPayload = (payload: Record<string, unknown>) => ({
   name: payload.title,
   description: payload.description,
@@ -14,7 +36,7 @@ const toProductPayload = (payload: Record<string, unknown>) => ({
         typeof image === "string"
           ? {
               url: image,
-              format: image.split(".").pop()?.toUpperCase() || "JPG",
+              format: getImageFormat(image),
               size: 0,
             }
           : image
