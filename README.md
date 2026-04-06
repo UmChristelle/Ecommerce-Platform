@@ -1,40 +1,49 @@
-# E-Comus — E-Commerce Platform
+# E-Comus - E-Commerce Platform
 
-A production-grade E-Commerce platform with a customer storefront and secure admin dashboard.
+A TypeScript e-commerce frontend built with React, Vite, TanStack Query, React Hook Form, and Zod. The app includes a storefront for shoppers and a role-protected admin dashboard for inventory, categories, and order management.
 
-##  Live Demo
-[Add your deployment URL here]
+## Repository
 
-##  Admin Login (for grading)
-- **Email:** admin@admin.com
-- **Password:** admin123
+GitHub: https://github.com/UmChristelle/Ecommerce-Platform
 
-##  Tech Stack
-- React 18 + TypeScript + Vite
-- Tailwind CSS
-- React Router v6
-- TanStack Query (React Query v5)
-- React Hook Form + Zod
-- Axios v1.14.0
-- React Hot Toast
+## Live Deployment
 
-##  Local Setup
+Add your deployed Vercel or Netlify URL here after the next push.
+
+## Admin Login
+
+- Email: `admin@admin.com`
+- Password: `admin123`
+
+## Features
+
+- Public storefront with product catalog, search, category filtering, and product details
+- Shopper authentication, persistent sessions, cart management, checkout, and order history
+- Admin-only dashboard for products, categories, and order status updates
+- Client-side validation with Zod and React Hook Form
+- Cached server state with TanStack Query
+- SPA routing support for deployment refreshes via [`vercel.json`](/c:/Users/educa/ecommerce-platform/vercel.json)
+
+## Local Setup
+
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/UmChristelle/Ecommerce-Platform.git
 cd ecommerce-platform
 npm install
 npm run dev
 ```
 
-##  Roles
-- **Admin** → Static credentials above → redirected to `/admin`
-- **User** → Register a new account → redirected to `/`
+Create a `.env` file if you want to override API settings locally. The current frontend is already configured to use the provided production API.
 
-## Features
-- Role-based protected routes (Admin / User / Guest)
-- Product catalog with search & category filter
-- Shopping cart with quantity management
-- Multi-step checkout with Zod validation
-- Admin dashboard: manage products, orders, categories
-- TanStack Query caching + auto invalidation
-- Fully responsive (mobile, tablet, desktop)
+## Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Assignment Notes
+
+- Axios version is pinned to `1.14.0`, which stays within the safe version range from the assignment.
+- Admin and shopper flows are wired to the provided backend API rather than using a fake local-only session.
+- Vercel SPA rewrites are configured so direct refreshes on routes like `/admin` and `/products/:id` resolve back to the app shell.
