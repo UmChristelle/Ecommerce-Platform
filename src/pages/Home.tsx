@@ -25,7 +25,7 @@ const Home = () => {
   const filtered = products.filter((p) => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.brand.toLowerCase().includes(search.toLowerCase());
-    const matchCat = selectedCategory === "all" || p.category?.id === selectedCategory;
+    const matchCat = selectedCategory === "all" || p.categoryId === selectedCategory;
     return matchSearch && matchCat;
   });
 

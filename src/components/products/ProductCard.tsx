@@ -13,9 +13,10 @@ interface Props { product: Product; }
 const ProductCard = ({ product }: Props) => {
   const { isAuthenticated, userRole } = useAuth();
   const queryClient = useQueryClient();
+  const defaultVariant = product.variants[0];
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => addToCart(product.id, 1),
+    mutationFn: () => addToCart(product.id, 1, defaultVariant?.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success(`${product.title} added to cart!`);
@@ -23,7 +24,7 @@ const ProductCard = ({ product }: Props) => {
     onError: () => toast.error("Failed to add to cart"),
   });
 
-  const image = product.images?.[0] ?? "https://placehold.co/400x300?text=No+Image";
+  const image = product.images[0] ?? "https://placehold.co/400x300?text=No+Image";
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group flex flex-col">

@@ -23,7 +23,7 @@ const ProductDetail = () => {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => addToCart(id!, 1),
+    mutationFn: () => addToCart(id!, 1, product?.variants[0]?.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Added to cart!");
@@ -44,12 +44,12 @@ const ProductDetail = () => {
         {/* Images */}
         <div>
           <img
-            src={product.images?.[activeImg] ?? "https://placehold.co/600x400?text=No+Image"}
+            src={product.images[activeImg] ?? "https://placehold.co/600x400?text=No+Image"}
             alt={product.title}
             className="w-full h-80 object-cover rounded-2xl shadow-sm"
             onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=No+Image"; }}
           />
-          {product.images?.length > 1 && (
+          {product.images.length > 1 && (
             <div className="flex gap-2 mt-3">
               {product.images.map((img, i) => (
                 <img
