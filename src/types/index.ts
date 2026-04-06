@@ -8,6 +8,11 @@ export interface User {
   role: UserRole;
 }
 
+export interface AuthPayload {
+  token: string | null;
+  user: User;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;
@@ -20,6 +25,23 @@ export interface Category {
   description?: string;
 }
 
+export interface ProductImage {
+  url: string;
+  format?: string;
+  size?: number;
+  createdAt?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  color?: string;
+  size?: string;
+  sku?: string;
+  price: number;
+  stock: number;
+  images: string[];
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -28,6 +50,8 @@ export interface Product {
   brand: string;
   stock: number;
   images: string[];
+  imageObjects: ProductImage[];
+  variants: ProductVariant[];
   category: Category;
   categoryId: string;
   createdAt: string;
@@ -48,6 +72,10 @@ export interface CartItem {
   id: string;
   productId: string;
   quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  variantId?: string;
+  variant?: ProductVariant;
   product: Product;
 }
 
@@ -56,10 +84,12 @@ export interface Cart {
   userId: string;
   items: CartItem[];
   total: number;
+  itemCount: number;
 }
 
 export type OrderStatus =
   | "PENDING"
+  | "PAID"
   | "PROCESSING"
   | "SHIPPED"
   | "DELIVERED"
@@ -74,6 +104,7 @@ export type PaymentMethod =
 export interface OrderItem {
   id: string;
   productId: string;
+  variantId?: string;
   quantity: number;
   price: number;
   product: Product;
