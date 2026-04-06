@@ -1,10 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCart, addToCart, removeCartItem } from "../api/cart";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { ArrowRight, ShoppingBag, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { getCart, removeCartItem, updateCartItem } from "../api/cart";
 import Spinner from "../components/ui/Spinner";
 import Button from "../components/ui/Button";
-import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
-import toast from "react-hot-toast";
 
 const Cart = () => {
   const queryClient = useQueryClient();
@@ -15,8 +15,8 @@ const Cart = () => {
   });
 
   const { mutate: updateQty } = useMutation({
-    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      addToCart(productId, quantity),
+    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
+      updateCartItem(itemId, quantity),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
     onError: () => toast.error("Failed to update cart"),
   });
@@ -27,10 +27,12 @@ const Cart = () => {
     onError: () => toast.error("Failed to remove item"),
   });
 
-  if (isLoading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
+  if (isLoading) {
+    return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
+  }
 
   const items = cart?.items ?? [];
-  const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const total = cart?.total ?? items.reduce((sum, item) => sum + item.subtotal, 0);
 
   if (items.length === 0) {
     return (
@@ -47,34 +49,43 @@ const Cart = () => {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Shopping Cart</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
             <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex gap-4">
               <img
-                src={item.product.images?.[0]}
+                src={item.product.images[0] ?? "https://placehold.co/96x96?text=Img"}
                 alt={item.product.title}
                 className="w-24 h-24 object-cover rounded-xl flex-shrink-0"
                 onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/96x96?text=Img"; }}
               />
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 truncate">{item.product.title}</h3>
-                <p className="text-sm text-gray-400">{item.product.brand}</p>
-                <p className="text-primary-600 font-bold mt-1">${item.product.price.toFixed(2)}</p>
+                <p className="text-sm text-gray-400">{item.product.brand || item.product.category?.name}</p>
+                <p className="text-primary-600 font-bold mt-1">${item.unitPrice.toFixed(2)}</p>
+                {item.variant && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {item.variant.color ?? "Variant"}
+                    {item.variant.size ? ` • ${item.variant.size}` : ""}
+                  </p>
+                )}
                 <div className="flex items-center gap-2 mt-2">
                   <button
-                    onClick={() => updateQty({ productId: item.productId, quantity: -1 })}
+                    onClick={() => updateQty({ itemId: item.id, quantity: Math.max(1, item.quantity - 1) })}
                     className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-gray-700 transition-colors"
-                  >−</button>
+                  >
+                    -
+                  </button>
                   <span className="font-semibold text-gray-800 w-6 text-center">{item.quantity}</span>
                   <button
-                    onClick={() => updateQty({ productId: item.productId, quantity: 1 })}
+                    onClick={() => updateQty({ itemId: item.id, quantity: item.quantity + 1 })}
                     className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-gray-700 transition-colors"
-                  >+</button>
+                  >
+                    +
+                  </button>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-bold text-gray-900">${(item.product.price * item.quantity).toFixed(2)}</p>
+                <p className="font-bold text-gray-900">${item.subtotal.toFixed(2)}</p>
                 <button
                   onClick={() => removeItem(item.id)}
                   className="mt-2 p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
@@ -86,15 +97,14 @@ const Cart = () => {
           ))}
         </div>
 
-        {/* Summary */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-24">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
             <div className="space-y-2 text-sm">
-              {items.map((i) => (
-                <div key={i.id} className="flex justify-between text-gray-600">
-                  <span className="truncate mr-2">{i.product.title} × {i.quantity}</span>
-                  <span className="shrink-0">${(i.product.price * i.quantity).toFixed(2)}</span>
+              {items.map((item) => (
+                <div key={item.id} className="flex justify-between text-gray-600">
+                  <span className="truncate mr-2">{item.product.title} x {item.quantity}</span>
+                  <span className="shrink-0">${item.subtotal.toFixed(2)}</span>
                 </div>
               ))}
             </div>
