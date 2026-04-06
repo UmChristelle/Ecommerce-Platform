@@ -7,7 +7,12 @@ import { User, Package, Calendar } from "lucide-react";
 import type { OrderStatus } from "../types";
 
 const statusColors: Record<OrderStatus, "yellow" | "blue" | "purple" | "green" | "red"> = {
-  PENDING: "yellow", PROCESSING: "blue", SHIPPED: "purple", DELIVERED: "green", CANCELLED: "red",
+  PENDING: "yellow",
+  PAID: "blue",
+  PROCESSING: "blue",
+  SHIPPED: "purple",
+  DELIVERED: "green",
+  CANCELLED: "red",
 };
 
 const Profile = () => {
