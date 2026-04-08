@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowRight, ShoppingBag, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getCart, removeCartItem, updateCartItem } from "../api/cart";
+import { getCart, replaceCart } from "../api/cart";
 import Spinner from "../components/ui/Spinner";
 import Button from "../components/ui/Button";
 import { getErrorMessage } from "../utils/errors";
@@ -15,18 +15,10 @@ const Cart = () => {
     queryFn: getCart,
   });
 
-  const { mutate: updateQty } = useMutation({
-    mutationFn: ({ itemId, quantity, fallbackId }: { itemId: string; quantity: number; fallbackId?: string }) =>
-      updateCartItem(itemId, quantity, fallbackId),
+  const { mutate: rewriteCart, isPending: isUpdatingCart } = useMutation({
+    mutationFn: replaceCart,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
     onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to update cart")),
-  });
-
-  const { mutate: removeItem } = useMutation({
-    mutationFn: ({ itemId, fallbackId }: { itemId: string; fallbackId?: string }) =>
-      removeCartItem(itemId, fallbackId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to remove item")),
   });
 
   if (isLoading) {
@@ -39,6 +31,23 @@ const Cart = () => {
 
   const items = cart?.items ?? [];
   const total = cart?.total ?? items.reduce((sum, item) => sum + item.subtotal, 0);
+
+  const syncItems = (
+    nextItems: typeof items,
+    fallbackMessage: string
+  ) => {
+    const replacementItems = nextItems
+      .map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        variantId: item.variantId,
+      }))
+      .filter((item) => item.productId && item.quantity > 0);
+
+    rewriteCart(replacementItems, {
+      onError: (error: unknown) => toast.error(getErrorMessage(error, fallbackMessage)),
+    });
+  };
 
   if (items.length === 0) {
     return (
@@ -93,12 +102,16 @@ const Cart = () => {
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     onClick={() =>
-                      updateQty({
-                        itemId: item.id,
-                        fallbackId: item.productId,
-                        quantity: Math.max(1, item.quantity - 1),
-                      })
+                      syncItems(
+                        items.map((cartItem) =>
+                          cartItem.id === item.id
+                            ? { ...cartItem, quantity: Math.max(1, cartItem.quantity - 1) }
+                            : cartItem
+                        ),
+                        "Failed to reduce cart quantity"
+                      )
                     }
+                    disabled={isUpdatingCart}
                     className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800"
                   >
                     -
@@ -106,12 +119,16 @@ const Cart = () => {
                   <span className="w-8 text-center font-semibold text-slate-100">{item.quantity}</span>
                   <button
                     onClick={() =>
-                      updateQty({
-                        itemId: item.id,
-                        fallbackId: item.productId,
-                        quantity: item.quantity + 1,
-                      })
+                      syncItems(
+                        items.map((cartItem) =>
+                          cartItem.id === item.id
+                            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                            : cartItem
+                        ),
+                        "Failed to increase cart quantity"
+                      )
                     }
+                    disabled={isUpdatingCart}
                     className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800"
                   >
                     +
@@ -122,7 +139,13 @@ const Cart = () => {
               <div className="flex shrink-0 items-center justify-between gap-3 text-left sm:block sm:text-right">
                 <p className="font-bold text-white">${item.subtotal.toFixed(2)}</p>
                 <button
-                  onClick={() => removeItem({ itemId: item.id, fallbackId: item.productId })}
+                  onClick={() =>
+                    syncItems(
+                      items.filter((cartItem) => cartItem.id !== item.id),
+                      "Failed to remove item from cart"
+                    )
+                  }
+                  disabled={isUpdatingCart}
                   className="mt-2 rounded-xl p-2 text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200"
                 >
                   <Trash2 size={14} />

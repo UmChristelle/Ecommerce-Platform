@@ -82,3 +82,28 @@ export const removeCartItem = async (itemId: string, fallbackId?: string): Promi
 export const clearCart = async (): Promise<void> => {
   await api.delete("/api/auth/cart");
 };
+
+export interface CartReplacementItem {
+  productId: string;
+  quantity: number;
+  variantId?: string;
+}
+
+export const replaceCart = async (items: CartReplacementItem[]): Promise<Cart> => {
+  await clearCart();
+
+  let latestCart: Cart = {
+    id: "",
+    userId: "",
+    items: [],
+    total: 0,
+    itemCount: 0,
+  };
+
+  for (const item of items) {
+    if (!item.productId || item.quantity <= 0) continue;
+    latestCart = await addToCart(item.productId, item.quantity, item.variantId);
+  }
+
+  return latestCart;
+};

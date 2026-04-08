@@ -109,6 +109,12 @@ const Dashboard = () => {
     { id: "categories", label: "Categories", icon: <Tag size={16} />, count: categories.length },
   ] as const;
   const isRefreshing = fetchingProducts || fetchingOrders || fetchingCategories;
+  const productsByCategory = products.reduce<Record<string, number>>((acc, product) => {
+    const categoryId = product.categoryId || product.category?.id;
+    if (!categoryId) return acc;
+    acc[categoryId] = (acc[categoryId] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -287,8 +293,24 @@ const Dashboard = () => {
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
                             <button onClick={() => openEditCat(category)} className="rounded-lg p-1.5 text-primary-300 hover:bg-primary-500/10"><Pencil size={14} /></button>
-                            <button onClick={() => setDeleteCategoryId(category.id)} className="rounded-lg p-1.5 text-red-300 hover:bg-red-500/10"><Trash2 size={14} /></button>
+                            <button
+                              onClick={() => {
+                                if ((productsByCategory[category.id] ?? 0) > 0) {
+                                  toast.error("Delete or move the products in this category first.");
+                                  return;
+                                }
+                                setDeleteCategoryId(category.id);
+                              }}
+                              className="rounded-lg p-1.5 text-red-300 hover:bg-red-500/10"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
+                          {(productsByCategory[category.id] ?? 0) > 0 && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {productsByCategory[category.id]} linked product{productsByCategory[category.id] === 1 ? "" : "s"}
+                            </p>
+                          )}
                         </td>
                       </tr>
                     ))}
