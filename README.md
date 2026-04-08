@@ -8,7 +8,7 @@ GitHub: https://github.com/UmChristelle/Ecommerce-Platform
 
 ## Live Deployment
 
-Add your deployed Vercel or Netlify URL here after the next push.
+(https://ecommerce-platform-sandy-ten.vercel.app/)]
 
 ## Admin Login
 
