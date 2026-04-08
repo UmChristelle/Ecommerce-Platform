@@ -7,13 +7,16 @@ import { addToCart } from "../../api/cart";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import clsx from "clsx";
+import { getErrorMessage } from "../../utils/errors";
 
-interface Props { product: Product; }
+interface Props {
+  product: Product;
+}
 
 const ProductCard = ({ product }: Props) => {
   const { isAuthenticated, userRole } = useAuth();
   const queryClient = useQueryClient();
-  const defaultVariant = product.variants[0];
+  const defaultVariant = product.variants.find((variant) => variant.stock > 0) ?? product.variants[0];
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => addToCart(product.id, 1, defaultVariant?.id),
@@ -21,45 +24,54 @@ const ProductCard = ({ product }: Props) => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success(`${product.title} added to cart!`);
     },
-    onError: () => toast.error("Failed to add to cart"),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to add to cart")),
   });
 
   const image = product.images[0] ?? "https://placehold.co/400x300?text=No+Image";
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group flex flex-col">
+    <div className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-900/75 shadow-xl shadow-slate-950/30 transition-all duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-2xl">
       <Link to={`/products/${product.id}`} className="overflow-hidden">
         <img
           src={image}
           alt={product.title}
-          className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x300?text=No+Image"; }}
+          className="h-56 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://placehold.co/400x300?text=No+Image";
+          }}
         />
       </Link>
 
-      <div className="p-4 flex flex-col flex-1 gap-2">
-        <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide">{product.brand}</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{product.brand || "Brand"}</p>
             <Link to={`/products/${product.id}`}>
-              <h3 className="font-semibold text-gray-900 leading-snug hover:text-primary-600 transition-colors line-clamp-2">
+              <h3 className="mt-2 line-clamp-2 text-lg font-bold leading-snug text-white transition-colors hover:text-primary-300">
                 {product.title}
               </h3>
             </Link>
           </div>
         </div>
 
-        <p className="text-xs text-gray-500 line-clamp-2 flex-1">{product.description}</p>
+        <p className="line-clamp-2 flex-1 text-sm leading-6 text-slate-400">{product.description}</p>
 
-        <div className="flex items-center gap-0.5">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
+        <div className="flex items-center gap-0.5 text-amber-300">
+          {[...Array(5)].map((_, index) => (
+            <Star key={index} size={12} className="fill-current" />
           ))}
         </div>
 
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xl font-bold text-primary-600">${product.price.toFixed(2)}</span>
-          <span className={clsx("text-xs font-medium px-2 py-1 rounded-full", product.stock > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <span className="text-2xl font-extrabold text-primary-300">${product.price.toFixed(2)}</span>
+          <span
+            className={clsx(
+              "rounded-full px-3 py-1 text-xs font-medium",
+              product.stock > 0
+                ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20"
+                : "bg-red-500/15 text-red-300 ring-1 ring-red-500/20"
+            )}
+          >
             {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
           </span>
         </div>
@@ -70,7 +82,7 @@ const ProductCard = ({ product }: Props) => {
             isLoading={isPending}
             onClick={() => mutate()}
             disabled={product.stock === 0}
-            className="w-full mt-1 gap-1.5"
+            className="mt-1 w-full gap-1.5"
           >
             <ShoppingCart size={14} />
             Add to Cart

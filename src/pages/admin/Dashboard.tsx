@@ -15,6 +15,7 @@ import Spinner from "../../components/ui/Spinner";
 import Input from "../../components/ui/Input";
 import type { Category, OrderStatus } from "../../types";
 import { categorySchema, type CategoryFormData } from "../../utils/validators";
+import { getErrorMessage } from "../../utils/errors";
 
 const statusColors: Record<OrderStatus, "yellow" | "blue" | "purple" | "green" | "red"> = {
   PENDING: "yellow",
@@ -35,9 +36,9 @@ const Dashboard = () => {
   const [editingCat, setEditingCat] = useState<Category | null>(null);
   const [activeTab, setActiveTab] = useState<"products" | "orders" | "categories">("products");
 
-  const { data: products = [], isLoading: loadingProducts } = useQuery({ queryKey: ["products"], queryFn: getProducts });
-  const { data: orders = [], isLoading: loadingOrders } = useQuery({ queryKey: ["allOrders"], queryFn: getAllOrders });
-  const { data: categories = [], isLoading: loadingCats } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const { data: products = [], isLoading: loadingProducts, refetch: refetchProducts, isFetching: fetchingProducts } = useQuery({ queryKey: ["products"], queryFn: getProducts });
+  const { data: orders = [], isLoading: loadingOrders, refetch: refetchOrders, isFetching: fetchingOrders } = useQuery({ queryKey: ["allOrders"], queryFn: getAllOrders });
+  const { data: categories = [], isLoading: loadingCats, refetch: refetchCategories, isFetching: fetchingCategories } = useQuery({ queryKey: ["categories"], queryFn: getCategories });
 
   const { mutate: delProduct, isPending: deletingProduct } = useMutation({
     mutationFn: deleteProduct,
@@ -46,7 +47,7 @@ const Dashboard = () => {
       toast.success("Product deleted");
       setDeleteProductId(null);
     },
-    onError: () => toast.error("Failed to delete product"),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to delete product")),
   });
 
   const { mutate: delCategory, isPending: deletingCat } = useMutation({
@@ -56,7 +57,7 @@ const Dashboard = () => {
       toast.success("Category deleted");
       setDeleteCategoryId(null);
     },
-    onError: () => toast.error("Failed to delete category"),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to delete category")),
   });
 
   const { mutate: updateStatus } = useMutation({
@@ -65,7 +66,7 @@ const Dashboard = () => {
       qc.invalidateQueries({ queryKey: ["allOrders"] });
       toast.success("Order status updated");
     },
-    onError: () => toast.error("Failed to update order status"),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to update order status")),
   });
 
   const {
@@ -92,7 +93,7 @@ const Dashboard = () => {
       setEditingCat(null);
       reset();
     },
-    onError: () => toast.error("Failed to save category"),
+    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to save category")),
   });
 
   const openEditCat = (category: Category) => {
@@ -107,22 +108,23 @@ const Dashboard = () => {
     { id: "orders", label: "Orders", icon: <ShoppingBag size={16} />, count: orders.length },
     { id: "categories", label: "Categories", icon: <Tag size={16} />, count: categories.length },
   ] as const;
+  const isRefreshing = fetchingProducts || fetchingOrders || fetchingCategories;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-500 mt-1">Manage your store</p>
+          <h1 className="text-3xl font-extrabold text-white">Admin Dashboard</h1>
+          <p className="mt-1 text-slate-400">Manage your store</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             variant="secondary"
             className="gap-2 w-full sm:w-auto"
-            onClick={() => {
-              qc.invalidateQueries({ queryKey: ["products"] });
-              qc.invalidateQueries({ queryKey: ["allOrders"] });
-              qc.invalidateQueries({ queryKey: ["categories"] });
+            isLoading={isRefreshing}
+            onClick={async () => {
+              await Promise.all([refetchProducts(), refetchOrders(), refetchCategories()]);
+              toast.success("Dashboard refreshed");
             }}
           >
             <RefreshCw size={16} /> Refresh
@@ -133,35 +135,35 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {[
-          { label: "Total Products", value: products.length, color: "bg-blue-50 text-blue-600", icon: <Package size={20} /> },
-          { label: "Total Orders", value: orders.length, color: "bg-green-50 text-green-600", icon: <ShoppingBag size={20} /> },
-          { label: "Categories", value: categories.length, color: "bg-purple-50 text-purple-600", icon: <Tag size={20} /> },
+          { label: "Total Products", value: products.length, color: "bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/20", icon: <Package size={20} /> },
+          { label: "Total Orders", value: orders.length, color: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20", icon: <ShoppingBag size={20} /> },
+          { label: "Categories", value: categories.length, color: "bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/20", icon: <Tag size={20} /> },
         ].map((stat) => (
           <div key={stat.label} className="card flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.color}`}>
               {stat.icon}
             </div>
             <div className="min-w-0">
-              <p className="text-2xl font-extrabold text-gray-900">{stat.value}</p>
-              <p className="text-sm text-gray-500">{stat.label}</p>
+              <p className="text-2xl font-extrabold text-white">{stat.value}</p>
+              <p className="text-sm text-slate-400">{stat.label}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto pb-1">
+      <div className="mb-6 flex gap-2 overflow-x-auto border-b border-slate-800 pb-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors -mb-px shrink-0 whitespace-nowrap ${
-              activeTab === tab.id ? "border-primary-600 text-primary-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+              activeTab === tab.id ? "border-primary-400 text-primary-300" : "border-transparent text-slate-500 hover:text-slate-200"
             }`}
           >
             {tab.icon} {tab.label}
-            <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? "bg-primary-100 text-primary-700" : "bg-gray-100 text-gray-500"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === tab.id ? "bg-primary-500/15 text-primary-200" : "bg-slate-800 text-slate-400"}`}>
               {tab.count}
             </span>
           </button>
@@ -169,22 +171,22 @@ const Dashboard = () => {
       </div>
 
       {activeTab === "products" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-900/75 shadow-xl shadow-slate-950/30">
           {loadingProducts ? (
             <div className="flex justify-center py-10"><Spinner /></div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="border-b border-slate-800 bg-slate-950/60">
                   <tr>
                     {["Product", "Brand", "Category", "Price", "Stock", "Actions"].map((heading) => (
-                      <th key={heading} className="text-left px-4 py-3 font-semibold text-gray-600">{heading}</th>
+                      <th key={heading} className="px-4 py-3 text-left font-semibold text-slate-400">{heading}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-slate-800">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={product.id} className="transition-colors hover:bg-slate-800/40">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3 min-w-0">
                           <img
@@ -193,19 +195,19 @@ const Dashboard = () => {
                             className="w-10 h-10 rounded-lg object-cover shrink-0"
                             onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/40x40?text=P"; }}
                           />
-                          <span className="font-medium text-gray-900 max-w-[180px] truncate">{product.title}</span>
+                          <span className="max-w-[180px] truncate font-medium text-slate-100">{product.title}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{product.brand}</td>
+                      <td className="px-4 py-3 text-slate-400">{product.brand}</td>
                       <td className="px-4 py-3"><Badge label={product.category?.name ?? "-"} color="blue" /></td>
-                      <td className="px-4 py-3 font-semibold text-primary-600">${product.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-semibold text-primary-300">${product.price.toFixed(2)}</td>
                       <td className="px-4 py-3"><Badge label={String(product.stock)} color={product.stock > 0 ? "green" : "red"} /></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Link to={`/admin/product/${product.id}/edit`}>
-                            <button className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"><Pencil size={14} /></button>
+                            <button className="rounded-lg p-1.5 text-primary-300 transition-colors hover:bg-primary-500/10"><Pencil size={14} /></button>
                           </Link>
-                          <button onClick={() => setDeleteProductId(product.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"><Trash2 size={14} /></button>
+                          <button onClick={() => setDeleteProductId(product.id)} className="rounded-lg p-1.5 text-red-300 transition-colors hover:bg-red-500/10"><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -218,32 +220,32 @@ const Dashboard = () => {
       )}
 
       {activeTab === "orders" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-900/75 shadow-xl shadow-slate-950/30">
           {loadingOrders ? (
             <div className="flex justify-center py-10"><Spinner /></div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="border-b border-slate-800 bg-slate-950/60">
                   <tr>
                     {["Order ID", "Customer", "Items", "Total", "Status", "Update Status"].map((heading) => (
-                      <th key={heading} className="text-left px-4 py-3 font-semibold text-gray-600">{heading}</th>
+                      <th key={heading} className="px-4 py-3 text-left font-semibold text-slate-400">{heading}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-slate-800">
                   {orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-400">#{order.id.slice(0, 8)}</td>
-                      <td className="px-4 py-3 text-gray-700">{order.fullName || "-"}</td>
-                      <td className="px-4 py-3 text-gray-500">{order.items?.length ?? 0} items</td>
-                      <td className="px-4 py-3 font-semibold text-primary-600">${order.total.toFixed(2)}</td>
+                    <tr key={order.id} className="transition-colors hover:bg-slate-800/40">
+                      <td className="px-4 py-3 font-mono text-xs text-slate-500">#{order.id.slice(0, 8)}</td>
+                      <td className="px-4 py-3 text-slate-200">{order.fullName || "-"}</td>
+                      <td className="px-4 py-3 text-slate-400">{order.items?.length ?? 0} items</td>
+                      <td className="px-4 py-3 font-semibold text-primary-300">${order.total.toFixed(2)}</td>
                       <td className="px-4 py-3"><Badge label={order.status} color={statusColors[order.status]} /></td>
                       <td className="px-4 py-3">
                         <select
                           defaultValue={order.status}
                           onChange={(e) => updateStatus({ id: order.id, status: e.target.value as OrderStatus })}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
+                          className="min-w-[140px] rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                         >
                           {ORDER_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
                         </select>
@@ -264,28 +266,28 @@ const Dashboard = () => {
               <Plus size={14} /> Add Category
             </Button>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-900/75 shadow-xl shadow-slate-950/30">
             {loadingCats ? (
               <div className="flex justify-center py-10"><Spinner /></div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
+                  <thead className="border-b border-slate-800 bg-slate-950/60">
                     <tr>
                       {["Name", "Description", "Actions"].map((heading) => (
-                        <th key={heading} className="text-left px-4 py-3 font-semibold text-gray-600">{heading}</th>
+                        <th key={heading} className="px-4 py-3 text-left font-semibold text-slate-400">{heading}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-slate-800">
                     {categories.map((category) => (
-                      <tr key={category.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-900">{category.name}</td>
-                        <td className="px-4 py-3 text-gray-500">{category.description || "-"}</td>
+                      <tr key={category.id} className="hover:bg-slate-800/40">
+                        <td className="px-4 py-3 font-medium text-slate-100">{category.name}</td>
+                        <td className="px-4 py-3 text-slate-400">{category.description || "-"}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
-                            <button onClick={() => openEditCat(category)} className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600"><Pencil size={14} /></button>
-                            <button onClick={() => setDeleteCategoryId(category.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 size={14} /></button>
+                            <button onClick={() => openEditCat(category)} className="rounded-lg p-1.5 text-primary-300 hover:bg-primary-500/10"><Pencil size={14} /></button>
+                            <button onClick={() => setDeleteCategoryId(category.id)} className="rounded-lg p-1.5 text-red-300 hover:bg-red-500/10"><Trash2 size={14} /></button>
                           </div>
                         </td>
                       </tr>
@@ -309,7 +311,7 @@ const Dashboard = () => {
           </>
         }
       >
-        <p className="text-gray-600">Are you sure you want to delete this product? This action cannot be undone.</p>
+        <p className="text-slate-300">Are you sure you want to delete this product? This action cannot be undone.</p>
       </Modal>
 
       <Modal
@@ -323,7 +325,7 @@ const Dashboard = () => {
           </>
         }
       >
-        <p className="text-gray-600">Are you sure you want to delete this category?</p>
+        <p className="text-slate-300">Are you sure you want to delete this category?</p>
       </Modal>
 
       <Modal
@@ -342,7 +344,7 @@ const Dashboard = () => {
         <form className="space-y-4">
           <Input label="Category Name" placeholder="Electronics" error={errors.name?.message} {...register("name")} />
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Description (optional)</label>
+            <label className="text-sm font-medium text-slate-200">Description (optional)</label>
             <textarea {...register("description")} className="input-field resize-none h-20" placeholder="Brief description..." />
           </div>
         </form>

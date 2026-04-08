@@ -22,6 +22,15 @@ const getData = <T>(payload: unknown): T | undefined => {
   return payload as T;
 };
 
+const getNumeric = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
 const toImageUrl = (image: unknown): string => {
   if (typeof image === "string") return image;
   if (image && typeof image === "object" && "url" in image) {
@@ -29,6 +38,16 @@ const toImageUrl = (image: unknown): string => {
   }
 
   return "";
+};
+
+const normalizeImageUrls = (...sources: unknown[]): string[] => {
+  return sources
+    .flatMap((source) => {
+      if (Array.isArray(source)) return source.map(toImageUrl);
+      return [toImageUrl(source)];
+    })
+    .map((image) => image.trim())
+    .filter(Boolean);
 };
 
 export const normalizeImageObjects = (images: unknown): ProductImage[] => {
@@ -59,40 +78,72 @@ export const normalizeVariants = (variants: unknown): ProductVariant[] => {
   if (!Array.isArray(variants)) return [];
 
   return variants.reduce<ProductVariant[]>((acc, variant) => {
-      if (!variant || typeof variant !== "object") return acc;
-      const record = variant as Record<string, unknown>;
-      const id = String(record.id ?? "");
-      if (!id) return acc;
-      acc.push({
-        id,
-        color: record.color ? String(record.color) : undefined,
-        size: record.size ? String(record.size) : undefined,
-        sku: record.sku ? String(record.sku) : undefined,
-        price: Number(record.price ?? 0),
-        stock: Number(record.stock ?? 0),
-        images: Array.isArray(record.images) ? record.images.map(toImageUrl).filter(Boolean) : [],
-      });
-      return acc;
-    }, []);
+    if (!variant || typeof variant !== "object") return acc;
+    const record = variant as Record<string, unknown>;
+    const id = String(record.id ?? record._id ?? record.variantId ?? "");
+    if (!id) return acc;
+    acc.push({
+      id,
+      color: record.color ? String(record.color) : undefined,
+      size: record.size ? String(record.size) : undefined,
+      sku: record.sku ? String(record.sku) : undefined,
+      price: Number(record.price ?? 0),
+      stock: Number(record.stock ?? 0),
+      images: normalizeImageUrls(record.images, record.image, record.imageUrl, record.thumbnail),
+    });
+    return acc;
+  }, []);
 };
 
 export const normalizeCategory = (category: unknown): Category => {
   const record = (category ?? {}) as Record<string, unknown>;
 
   return {
-    id: String(record.id ?? record._id ?? ""),
-    name: String(record.name ?? ""),
+    id: String(record.id ?? record._id ?? record.categoryId ?? ""),
+    name: String(record.name ?? record.title ?? ""),
     description: record.description ? String(record.description) : undefined,
   };
+};
+
+export const normalizeCategoriesResponse = (payload: unknown): Category[] => {
+  const data = getData<unknown>(payload);
+
+  if (Array.isArray(data)) return data.map(normalizeCategory);
+
+  if (data && typeof data === "object") {
+    const record = data as Record<string, unknown>;
+    const candidates = [record.data, record.categories, record.items];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) {
+        return candidate.map(normalizeCategory);
+      }
+    }
+  }
+
+  return [];
 };
 
 export const normalizeProduct = (product: unknown): Product => {
   const record = (product ?? {}) as Record<string, unknown>;
   const images = normalizeImageObjects(record.images);
+  const variants = normalizeVariants(record.variants);
   const categoryRecord =
     record.category && typeof record.category === "object"
       ? (record.category as Record<string, unknown>)
       : undefined;
+  const derivedStock = variants.reduce((sum, variant) => sum + Math.max(variant.stock, 0), 0);
+  const directStock = getNumeric(record.stock);
+  const normalizedImages = [
+    ...images.map((image) => image.url),
+    ...normalizeImageUrls(
+      record.image,
+      record.imageUrl,
+      record.thumbnail,
+      record.thumbnailUrl,
+      categoryRecord?.image
+    ),
+  ].filter(Boolean);
 
   return {
     id: String(record.id ?? record._id ?? ""),
@@ -100,12 +151,12 @@ export const normalizeProduct = (product: unknown): Product => {
     description: String(record.description ?? ""),
     price: Number(record.price ?? 0),
     brand: String(record.brand ?? ""),
-    stock: Number(record.stock ?? 0),
-    images: images.map((image) => image.url),
+    stock: directStock && directStock > 0 ? directStock : Math.max(directStock ?? 0, derivedStock),
+    images: Array.from(new Set(normalizedImages)),
     imageObjects: images,
-    variants: normalizeVariants(record.variants),
+    variants,
     category: record.category ? normalizeCategory(record.category) : { id: "", name: "" },
-    categoryId: String(record.categoryId ?? categoryRecord?.id ?? ""),
+    categoryId: String(record.categoryId ?? categoryRecord?.id ?? categoryRecord?._id ?? ""),
     createdAt: String(record.createdAt ?? ""),
     updatedAt: String(record.updatedAt ?? ""),
   };
@@ -162,25 +213,43 @@ const normalizeOrderItemProduct = (product: unknown): Product => {
 export const normalizeCartItem = (item: unknown): CartItem => {
   const record = (item ?? {}) as Record<string, unknown>;
   const variant = normalizeVariants(record.variant ? [record.variant] : [])[0];
+  const fallbackImages = normalizeImageUrls(
+    record.images,
+    record.image,
+    record.imageUrl,
+    record.thumbnail,
+    record.thumbnailUrl,
+    variant?.images
+  );
   const fallbackProduct = normalizeOrderItemProduct({
     id: record.productId,
     name: record.productName,
     category: record.category ? { name: record.category } : undefined,
     price: record.unitPrice,
-    stock: variant?.stock ?? 0,
+    stock: variant?.stock ?? record.stock ?? 0,
     variants: variant ? [variant] : [],
-    images: variant?.images ?? [],
+    images: fallbackImages,
   });
+  const quantity = Number(record.quantity ?? 0);
+  const unitPrice = Number(record.unitPrice ?? fallbackProduct.price ?? 0);
+  const variantId = String(record.variantId ?? variant?.id ?? "");
+  const normalizedProduct = record.product
+    ? normalizeOrderItemProduct(record.product)
+    : fallbackProduct;
+  const productWithFallbackImages =
+    normalizedProduct.images.length > 0
+      ? normalizedProduct
+      : { ...normalizedProduct, images: fallbackImages };
 
   return {
-    id: String(record.id ?? ""),
-    productId: String(record.productId ?? ""),
-    quantity: Number(record.quantity ?? 0),
-    unitPrice: Number(record.unitPrice ?? fallbackProduct.price ?? 0),
-    subtotal: Number(record.subtotal ?? 0),
-    variantId: variant?.id,
+    id: String(record.id ?? record._id ?? record.cartItemId ?? record.itemId ?? record.productId ?? ""),
+    productId: String(record.productId ?? (record.product as Record<string, unknown> | undefined)?.id ?? (record.product as Record<string, unknown> | undefined)?._id ?? ""),
+    quantity,
+    unitPrice,
+    subtotal: Number(record.subtotal ?? quantity * unitPrice),
+    variantId: variantId || undefined,
     variant,
-    product: record.product ? normalizeOrderItemProduct(record.product) : fallbackProduct,
+    product: productWithFallbackImages,
   };
 };
 
@@ -202,7 +271,7 @@ export const normalizeOrderItem = (item: unknown): OrderItem => {
   const record = (item ?? {}) as Record<string, unknown>;
 
   return {
-    id: String(record.id ?? ""),
+    id: String(record.id ?? record._id ?? ""),
     productId: String(record.productId ?? ""),
     variantId: record.variantId ? String(record.variantId) : undefined,
     quantity: Number(record.quantity ?? 0),
