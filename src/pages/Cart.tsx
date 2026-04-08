@@ -15,9 +15,12 @@ const Cart = () => {
     queryFn: getCart,
   });
 
-  const { mutate: rewriteCart, isPending: isUpdatingCart } = useMutation({
+  const { mutateAsync: rewriteCart, isPending: isUpdatingCart } = useMutation({
     mutationFn: replaceCart,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
+    onSuccess: (updatedCart) => {
+      queryClient.setQueryData(["cart"], updatedCart);
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
     onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to update cart")),
   });
 
@@ -32,10 +35,24 @@ const Cart = () => {
   const items = cart?.items ?? [];
   const total = cart?.total ?? items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  const syncItems = (
-    nextItems: typeof items,
-    fallbackMessage: string
-  ) => {
+  const syncItems = async (nextItems: typeof items, fallbackMessage: string) => {
+    const previousCart = cart;
+    const optimisticCart = previousCart
+      ? {
+          ...previousCart,
+          items: nextItems.map((item) => ({
+            ...item,
+            subtotal: item.unitPrice * item.quantity,
+          })),
+          total: nextItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+          itemCount: nextItems.reduce((sum, item) => sum + item.quantity, 0),
+        }
+      : previousCart;
+
+    if (optimisticCart) {
+      queryClient.setQueryData(["cart"], optimisticCart);
+    }
+
     const replacementItems = nextItems
       .map((item) => ({
         productId: item.productId,
@@ -44,9 +61,14 @@ const Cart = () => {
       }))
       .filter((item) => item.productId && item.quantity > 0);
 
-    rewriteCart(replacementItems, {
-      onError: (error: unknown) => toast.error(getErrorMessage(error, fallbackMessage)),
-    });
+    try {
+      await rewriteCart(replacementItems);
+    } catch (error) {
+      if (previousCart) {
+        queryClient.setQueryData(["cart"], previousCart);
+      }
+      toast.error(getErrorMessage(error, fallbackMessage));
+    }
   };
 
   if (items.length === 0) {
@@ -95,14 +117,15 @@ const Cart = () => {
                 {item.variant && (
                   <p className="mt-1 text-xs text-slate-500">
                     {item.variant.color ?? "Variant"}
-                    {item.variant.size ? ` • ${item.variant.size}` : ""}
+                    {item.variant.size ? ` / ${item.variant.size}` : ""}
                   </p>
                 )}
 
                 <div className="mt-3 flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() =>
-                      syncItems(
+                      void syncItems(
                         items.map((cartItem) =>
                           cartItem.id === item.id
                             ? { ...cartItem, quantity: Math.max(1, cartItem.quantity - 1) }
@@ -112,14 +135,15 @@ const Cart = () => {
                       )
                     }
                     disabled={isUpdatingCart}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     -
                   </button>
                   <span className="w-8 text-center font-semibold text-slate-100">{item.quantity}</span>
                   <button
+                    type="button"
                     onClick={() =>
-                      syncItems(
+                      void syncItems(
                         items.map((cartItem) =>
                           cartItem.id === item.id
                             ? { ...cartItem, quantity: cartItem.quantity + 1 }
@@ -129,7 +153,7 @@ const Cart = () => {
                       )
                     }
                     disabled={isUpdatingCart}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     +
                   </button>
@@ -139,14 +163,15 @@ const Cart = () => {
               <div className="flex shrink-0 items-center justify-between gap-3 text-left sm:block sm:text-right">
                 <p className="font-bold text-white">${item.subtotal.toFixed(2)}</p>
                 <button
+                  type="button"
                   onClick={() =>
-                    syncItems(
+                    void syncItems(
                       items.filter((cartItem) => cartItem.id !== item.id),
                       "Failed to remove item from cart"
                     )
                   }
                   disabled={isUpdatingCart}
-                  className="mt-2 rounded-xl p-2 text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200"
+                  className="mt-2 rounded-xl p-2 text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Trash2 size={14} />
                 </button>

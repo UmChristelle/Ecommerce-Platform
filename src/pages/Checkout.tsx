@@ -6,7 +6,7 @@ import { CheckCircle, ClipboardList, CreditCard, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { createOrder, getMyOrders } from "../api/orders";
-import { getCart, replaceCart } from "../api/cart";
+import { getCart } from "../api/cart";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { checkoutSchema, type CheckoutFormData } from "../utils/validators";
@@ -36,18 +36,7 @@ const Checkout = () => {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data: CheckoutFormData) => {
-      const replacementItems = (cart?.items ?? [])
-        .map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          variantId: item.variantId,
-        }))
-        .filter((item) => item.productId && item.quantity > 0);
-
-      await replaceCart(replacementItems);
-      return createOrder(data);
-    },
+    mutationFn: (data: CheckoutFormData) => createOrder(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["cart"] });
       await queryClient.invalidateQueries({ queryKey: ["myOrders"] });

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ShoppingCart, Star } from "lucide-react";
-import type { Product } from "../../types";
+import type { Cart, Product } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addToCart } from "../../api/cart";
@@ -16,15 +16,73 @@ interface Props {
 const ProductCard = ({ product }: Props) => {
   const { isAuthenticated, userRole } = useAuth();
   const queryClient = useQueryClient();
-  const defaultVariant = product.variants.find((variant) => variant.stock > 0) ?? product.variants[0];
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => addToCart(product.id, 1, defaultVariant?.id),
+    mutationFn: () => addToCart(product.id, 1),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["cart"] });
+      const previousCart = queryClient.getQueryData<Cart>(["cart"]);
+      const existingItem = previousCart?.items.find(
+        (item) => item.productId === product.id && !item.variantId
+      );
+
+      const optimisticCart: Cart = previousCart
+        ? {
+            ...previousCart,
+            items: existingItem
+              ? previousCart.items.map((item) =>
+                  item.productId === product.id && !item.variantId
+                    ? {
+                        ...item,
+                        quantity: item.quantity + 1,
+                        subtotal: item.unitPrice * (item.quantity + 1),
+                      }
+                    : item
+                )
+              : [
+                  ...previousCart.items,
+                  {
+                    id: `optimistic-${product.id}`,
+                    productId: product.id,
+                    quantity: 1,
+                    unitPrice: product.price,
+                    subtotal: product.price,
+                    product,
+                  },
+                ],
+            total: (previousCart.total ?? 0) + product.price,
+            itemCount: (previousCart.itemCount ?? 0) + 1,
+          }
+        : {
+            id: "",
+            userId: "",
+            items: [
+              {
+                id: `optimistic-${product.id}`,
+                productId: product.id,
+                quantity: 1,
+                unitPrice: product.price,
+                subtotal: product.price,
+                product,
+              },
+            ],
+            total: product.price,
+            itemCount: 1,
+          };
+
+      queryClient.setQueryData(["cart"], optimisticCart);
+      return { previousCart };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success(`${product.title} added to cart!`);
     },
-    onError: (error: unknown) => toast.error(getErrorMessage(error, "Failed to add to cart")),
+    onError: (error: unknown, _variables, context) => {
+      if (context?.previousCart) {
+        queryClient.setQueryData(["cart"], context.previousCart);
+      }
+      toast.error(getErrorMessage(error, "Failed to add to cart"));
+    },
   });
 
   const image = product.images[0] ?? "https://placehold.co/400x300?text=No+Image";

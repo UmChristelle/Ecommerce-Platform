@@ -1,6 +1,6 @@
 import api from "./axios";
 import type { Cart } from "../types";
-import { normalizeCartResponse } from "./normalizers";
+import { normalizeCartResponse, normalizeProductResponse } from "./normalizers";
 
 const getApiErrorMessage = (error: unknown): string => {
   if (error && typeof error === "object") {
@@ -36,6 +36,27 @@ export const addToCart = async (
     return normalizeCartResponse(data);
   } catch (error) {
     const message = getApiErrorMessage(error).toLowerCase();
+    if (message.includes("variant")) {
+      const { data: productData } = await api.get(`/api/public/products/${productId}`);
+      const product = normalizeProductResponse(productData);
+      const fallbackVariant =
+        product.variants.find((variant) => variant.stock > 0) ?? product.variants[0];
+
+      if (fallbackVariant?.id) {
+        const { data } = await api.post("/api/auth/cart/items", {
+          productId,
+          variantId: fallbackVariant.id,
+          quantity,
+        });
+        return normalizeCartResponse(data);
+      }
+
+      if (variantId) {
+        const { data } = await api.post("/api/auth/cart/items", { productId, quantity });
+        return normalizeCartResponse(data);
+      }
+    }
+
     if (variantId && message.includes("variant not found")) {
       const { data } = await api.post("/api/auth/cart/items", { productId, quantity });
       return normalizeCartResponse(data);
