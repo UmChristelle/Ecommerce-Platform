@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { getProducts } from "../api/products";
 import { getCategories } from "../api/categories";
 import ProductCard from "../components/products/ProductCard";
 import Spinner from "../components/ui/Spinner";
-import { Search, SlidersHorizontal } from "lucide-react";
 
 const Home = () => {
   const [search, setSearch] = useState("");
@@ -22,61 +22,100 @@ const Home = () => {
     staleTime: 1000 * 60 * 10,
   });
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase());
-    const matchCat = selectedCategory === "all" || p.categoryId === selectedCategory;
+  const filtered = products.filter((product) => {
+    const matchSearch =
+      product.title.toLowerCase().includes(search.toLowerCase()) ||
+      product.brand.toLowerCase().includes(search.toLowerCase());
+    const matchCat = selectedCategory === "all" || product.categoryId === selectedCategory;
     return matchSearch && matchCat;
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-6 sm:p-8 lg:p-12 mb-10 text-white text-center">
-        <h1 className="text-3xl md:text-5xl font-extrabold mb-3">Welcome to E-Comus</h1>
-        <p className="text-primary-100 text-base sm:text-lg mb-6">Discover amazing products at unbeatable prices</p>
-        <div className="max-w-xl mx-auto relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products or brands..."
-            className="w-full pl-11 pr-4 py-3 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
-          />
-        </div>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section className="relative mb-10 overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-900/80 px-6 py-10 shadow-2xl shadow-slate-950/50 sm:px-8 lg:px-12">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.24),_transparent_30%),radial-gradient(circle_at_80%_20%,_rgba(59,130,246,0.18),_transparent_28%)]" />
+        <div className="relative grid gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1 text-sm font-medium text-primary-200">
+              <Sparkles size={14} />
+              Modern storefront experience
+            </div>
+            <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+              Premium shopping, with a sharper dark experience.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+              Browse curated products, filter by category, and shop with a cleaner, more polished interface.
+            </p>
+            <div className="relative mt-8 max-w-xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products or brands..."
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 py-3 pl-11 pr-4 text-slate-100 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40"
+              />
+            </div>
+          </div>
 
-      {/* Category Filter */}
-      <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2">
-        <SlidersHorizontal size={16} className="text-gray-500 shrink-0" />
+          <div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:justify-self-end">
+            {[
+              { label: "Products", value: products.length },
+              { label: "Categories", value: categories.length },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-sm text-slate-400">{stat.label}</p>
+                <p className="mt-2 text-3xl font-extrabold text-white">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="mb-6 flex items-center gap-3 overflow-x-auto pb-2">
+        <SlidersHorizontal size={16} className="shrink-0 text-slate-400" />
         <button
           onClick={() => setSelectedCategory("all")}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${selectedCategory === "all" ? "bg-primary-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+          className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            selectedCategory === "all"
+              ? "bg-primary-400 text-slate-950 shadow-lg shadow-primary-500/20"
+              : "border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600 hover:text-slate-100"
+          }`}
         >
           All
         </button>
-        {categories.map((cat) => (
+        {categories.map((category) => (
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${selectedCategory === cat.id ? "bg-primary-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              selectedCategory === category.id
+                ? "bg-primary-400 text-slate-950 shadow-lg shadow-primary-500/20"
+                : "border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600 hover:text-slate-100"
+            }`}
           >
-            {cat.name}
+            {category.name}
           </button>
         ))}
       </div>
 
-      {/* Products */}
       {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-20">
+          <Spinner size="lg" />
+        </div>
       ) : isError ? (
-        <div className="text-center py-20 text-red-500 font-medium">Failed to load products. Please try again.</div>
+        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 py-20 text-center font-medium text-red-300">
+          Failed to load products. Please try again.
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">No products found.</div>
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 py-20 text-center text-slate-400">
+          No products found.
+        </div>
       ) : (
         <>
-          <p className="text-sm text-gray-500 mb-4">{filtered.length} product{filtered.length !== 1 ? "s" : ""} found</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+          <p className="mb-4 text-sm text-slate-400">
+            {filtered.length} product{filtered.length !== 1 ? "s" : ""} found
+          </p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {filtered.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

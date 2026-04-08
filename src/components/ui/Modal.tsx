@@ -21,16 +21,16 @@ const Modal = ({ isOpen, onClose, title, children, footer }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10 animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
-            <X size={20} className="text-gray-500" />
+      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/95 shadow-2xl shadow-black/50">
+        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
+          <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-100">
+            <X size={20} />
           </button>
         </div>
-        <div className="p-6">{children}</div>
-        {footer && <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">{footer}</div>}
+        <div className="p-6 text-slate-300">{children}</div>
+        {footer && <div className="flex justify-end gap-3 border-t border-slate-800 bg-slate-950/50 px-6 py-5">{footer}</div>}
       </div>
     </div>
   );

@@ -25,23 +25,23 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+    <nav className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 shadow-lg shadow-black/20 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary-600">
-            <Package size={24} />
+          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-slate-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-500/15 text-primary-300 ring-1 ring-primary-500/20">
+              <Package size={22} />
+            </div>
             <span>E-Comus</span>
           </Link>
 
-          {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-4 xl:gap-6">
-            <Link to="/" className="text-gray-600 hover:text-primary-600 font-medium transition-colors">
+            <Link to="/" className="font-medium text-slate-300 transition-colors hover:text-primary-300">
               Store
             </Link>
 
             {isAuthenticated && userRole === "ADMIN" && (
-              <Link to="/admin" className="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 font-medium transition-colors">
+              <Link to="/admin" className="flex items-center gap-1.5 font-medium text-slate-300 transition-colors hover:text-primary-300">
                 <LayoutDashboard size={16} />
                 Admin Dashboard
               </Link>
@@ -49,16 +49,16 @@ const Navbar = () => {
 
             {isAuthenticated && userRole === "USER" && (
               <>
-                <Link to="/cart" className="relative flex items-center gap-1.5 text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                <Link to="/cart" className="relative flex items-center gap-1.5 font-medium text-slate-300 transition-colors hover:text-primary-300">
                   <ShoppingCart size={18} />
                   My Cart
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-primary-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    <span className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-400 text-xs font-bold text-slate-950">
                       {cartCount}
                     </span>
                   )}
                 </Link>
-                <Link to="/profile" className="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                <Link to="/profile" className="flex items-center gap-1.5 font-medium text-slate-300 transition-colors hover:text-primary-300">
                   <User size={16} />
                   Profile
                 </Link>
@@ -73,10 +73,10 @@ const Navbar = () => {
 
             {isAuthenticated && (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500 hidden xl:block max-w-32 truncate">Hi, {user?.name}</span>
+                <span className="hidden max-w-32 truncate text-sm text-slate-400 xl:block">Hi, {user?.name}</span>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 font-medium transition-colors"
+                  className="flex items-center gap-1.5 font-medium text-slate-300 transition-colors hover:text-red-300"
                 >
                   <LogOut size={16} />
                   Logout
@@ -85,9 +85,8 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile hamburger */}
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-slate-800 lg:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -95,23 +94,22 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3 shadow-lg">
-          <Link to="/" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium hover:text-primary-600">Store</Link>
+        <div className="space-y-3 border-t border-slate-800 bg-slate-950/95 px-4 py-4 shadow-lg lg:hidden">
+          <Link to="/" onClick={() => setMenuOpen(false)} className="block py-2 font-medium text-slate-200 hover:text-primary-300">Store</Link>
 
           {isAuthenticated && userRole === "ADMIN" && (
-            <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 py-2 text-gray-700 font-medium hover:text-primary-600">
+            <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium text-slate-200 hover:text-primary-300">
               <LayoutDashboard size={16} /> Admin Dashboard
             </Link>
           )}
 
           {isAuthenticated && userRole === "USER" && (
             <>
-              <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 py-2 text-gray-700 font-medium hover:text-primary-600">
+              <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium text-slate-200 hover:text-primary-300">
                 <ShoppingCart size={16} /> My Cart {cartCount > 0 && `(${cartCount})`}
               </Link>
-              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 py-2 text-gray-700 font-medium hover:text-primary-600">
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 py-2 font-medium text-slate-200 hover:text-primary-300">
                 <User size={16} /> Profile
               </Link>
             </>
